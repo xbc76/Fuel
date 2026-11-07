@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Surtidor · Comparador España / Gibraltar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --asphalt-950:#0d1013;
+    --asphalt-900:#12161a;
+    --asphalt-800:#1a2027;
+    --asphalt-700:#232a33;
+    --asphalt-600:#323b46;
+    --line:#2a323c;
+    --ink:#e9edf0;
+    --ink-dim:#9aa5b1;
+    --ink-faint:#5f6b78;
+    --amber:#e8a33d;
+    --amber-dim:#4a3a1e;
+    --green:#3dab74;
+    --green-dim:#1c3b2c;
+    --red:#e15252;
+    --border-radius:16px;
+    --glow-color:#1b2129;
+  }
+  [data-theme="light"]{
+    --asphalt-950:#f3f5f7; --asphalt-900:#ffffff; --asphalt-800:#ffffff;
+    --asphalt-700:#eef1f4; --asphalt-600:#d9dee4; --line:#e1e5ea;
+    --ink:#1c232b; --ink-dim:#5b6673; --ink-faint:#8a94a1;
+    --amber:#c8701a; --amber-dim:#fbeed9; --green:#1f8a54; --green-dim:#e1f5ea; --red:#c23b3b;
+    --glow-color:#f3f5f7;
+  }
+  [data-theme="cream"]{
+    --asphalt-950:#f6efe0; --asphalt-900:#fffaf0; --asphalt-800:#fdf6e8;
+    --asphalt-700:#f1e6cd; --asphalt-600:#e3d3ab; --line:#e6dcc8;
+    --ink:#2b2418; --ink-dim:#6b5f4a; --ink-faint:#9c8f76;
+    --amber:#bd6a17; --amber-dim:#f0dfc0; --green:#1c7a4a; --green-dim:#dcefe0; --red:#b83535;
+    --glow-color:#f6efe0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, var(--glow-color) 0%, transparent 60%),
+      var(--asphalt-950);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:110px;
+    min-height:100vh;
+  }
+  ::selection{background:var(--amber);color:#1a1300;}
+
+  header{
+    position:sticky; top:0; z-index:20;
+    background:rgba(13,16,19,0.94);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    padding:14px 16px 13px;
+  }
+  .header-row{display:flex; align-items:center; gap:9px;}
+  .icon-btn{
+    width:42px; height:42px; border-radius:12px; flex-shrink:0;
+    background:var(--asphalt-800); border:1.5px solid var(--asphalt-600);
+    color:var(--ink); font-size:18px; cursor:pointer;
+  }
+  .icon-btn:active{background:var(--asphalt-700);}
+  .header-fuel-chip{
+    margin-left:auto; background:var(--asphalt-800); border:1.5px solid var(--asphalt-600); border-radius:22px;
+    padding:9px 13px; font-size:12.5px; font-weight:700; color:var(--amber); cursor:pointer;
+    font-family:'Inter',sans-serif; max-width:38vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .brand{display:flex; align-items:center; gap:10px; min-width:0;}
+  .brand-mark{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(155deg, var(--amber), #b9772a);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; color:#1a1300; font-size:18px;
+    flex-shrink:0;
+  }
+  h1{font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; letter-spacing:-0.01em; margin:0; line-height:1.15;}
+  .subtitle{font-size:11px; color:var(--ink-dim); margin-top:1px; letter-spacing:.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  /* ---------- Menú lateral ---------- */
+  .drawer-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1600;
+    opacity:0; pointer-events:none; transition:opacity .2s;
+  }
+  .drawer-overlay.open{opacity:1; pointer-events:auto;}
+  .drawer{
+    position:fixed; top:0; left:0; bottom:0; width:86%; max-width:320px; z-index:1601;
+    background:var(--asphalt-800); border-right:1px solid var(--line);
+    transform:translateX(-105%); transition:transform .25s ease;
+    display:flex; flex-direction:column;
+  }
+  .drawer.open{transform:translateX(0);}
+  .drawer-head{
+    display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+    padding:16px 16px 12px; border-bottom:1px solid var(--line);
+  }
+  .drawer-title{font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700;}
+  .drawer-body{
+    flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));
+  }
+  .drawer-section{margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:14px;}
+  .drawer-section:last-child{margin-bottom:0; border-bottom:0; padding-bottom:0;}
+  .drawer-label-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:9px;}
+  .drawer-label{font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-dim); font-weight:700;}
+  summary.drawer-label{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    cursor:pointer; list-style:none; margin-bottom:0; padding:2px 0;
+  }
+  summary.drawer-label::-webkit-details-marker{display:none;}
+  summary.drawer-label .chev{color:var(--ink-faint); font-size:11px; transition:transform .2s; flex-shrink:0;}
+  .drawer-section[open] > summary.drawer-label .chev{transform:rotate(180deg);}
+  .drawer-section > summary.drawer-label + *{margin-top:12px;}
+  .drawer-actions{display:flex; align-items:center; justify-content:flex-end; gap:4px; margin-bottom:9px;}
+  .drawer-hint{font-size:12px; color:var(--ink-faint); line-height:1.5;}
+  .link-btn{background:none; border:0; color:var(--amber); font-size:11.5px; font-weight:700; cursor:pointer; padding:2px 4px;}
+
+  .fuel-list{display:flex; flex-direction:column; gap:8px;}
+  .fuel-btn{
+    background:var(--asphalt-900); border:2px solid var(--asphalt-600); color:var(--ink-dim);
+    border-radius:13px; padding:13px 14px; cursor:pointer; font-family:'Inter',sans-serif;
+    display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  }
+  .fuel-btn .ico{font-size:21px; flex-shrink:0;}
+  .fuel-btn .txt b{display:block; font-size:14.5px; font-weight:700; color:inherit;}
+  .fuel-btn .txt small{display:block; font-size:11px; opacity:.75; margin-top:1px;}
+  .fuel-btn.active{border-color:var(--amber); background:var(--amber-dim); color:var(--amber);}
+  .fuel-btn.active.diesel{border-color:var(--green); background:var(--green-dim); color:var(--green);}
+
+  .brand-filter-list{display:flex; flex-direction:column; gap:1px; max-height:230px; overflow-y:auto; border-radius:10px;}
+  .brand-row{display:flex; align-items:center; gap:10px; padding:8px 4px; font-size:13.5px; color:var(--ink-dim); cursor:pointer;}
+  .brand-row input{width:18px; height:18px; accent-color:var(--amber); flex-shrink:0;}
+
+  .theme-grid{display:flex; flex-direction:column; gap:8px;}
+  .theme-btn{
+    display:flex; align-items:center; gap:12px; background:var(--asphalt-900); border:2px solid var(--asphalt-600);
+    border-radius:12px; padding:12px 14px; font-size:13.5px; font-weight:600; color:var(--ink-dim); cursor:pointer;
+    font-family:'Inter',sans-serif; width:100%; text-align:left;
+  }
+  .theme-btn.active{border-color:var(--amber); color:var(--ink);}
+  .swatch{width:20px; height:20px; border-radius:50%; flex-shrink:0; border:2px solid rgba(120,120,120,0.25);}
+  .swatch-light{background:#ffffff;}
+  .swatch-cream{background:#f6efe0;}
+  .swatch-dark{background:#12161a;}
+
+  main{max-width:680px; margin:0 auto; padding:0 14px;}
+  section{margin-top:20px;}
+  .panel{background:var(--asphalt-800); border:1px solid var(--line); border-radius:var(--border-radius); padding:18px;}
+  .panel + .panel{margin-top:10px;}
+  .panel-title{
+    font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.06em; color:var(--ink-dim);
+    margin-bottom:14px;
+  }
+
+  label{display:block; font-size:13px; color:var(--ink-dim); margin-bottom:7px; font-weight:600;}
+  input[type=number], input[type=text]{
+    width:100%; background:var(--asphalt-900); border:1.5px solid var(--asphalt-600);
+    color:var(--ink); border-radius:12px; padding:14px; font-size:17px; font-family:'Inter',sans-serif; font-weight:600;
+  }
+  input:focus{outline:2px solid var(--amber); outline-offset:1px; border-color:var(--amber);}
+  .field{margin-bottom:14px;}
+  .field:last-child{margin-bottom:0;}
+
+  .segmented{display:flex; background:var(--asphalt-900); border:1.5px solid var(--asphalt-600); border-radius:12px; padding:4px; gap:4px;}
+  .segmented button{
+    flex:1; background:transparent; border:0; color:var(--ink-dim); padding:12px 4px; font-size:13.5px;
+    font-weight:700; border-radius:9px; cursor:pointer; font-family:'Inter',sans-serif; min-height:44px;
+  }
+  .segmented button.active{background:var(--asphalt-700); color:var(--ink);}
+  .segmented.sm button{padding:9px 4px; font-size:12.5px; min-height:38px;}
+
+  .stepper{display:flex; align-items:stretch; gap:8px;}
+  .stepper input{text-align:center; flex:1;}
+  .stepper button{
+    width:52px; flex-shrink:0; background:var(--asphalt-900); border:1.5px solid var(--asphalt-600);
+    border-radius:12px; color:var(--amber); font-size:24px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; line-height:1;
+  }
+  .stepper button:active{background:var(--asphalt-700);}
+
+  button.ghost{
+    width:100%; background:transparent; color:var(--ink-dim); border:1.5px solid var(--asphalt-600);
+    border-radius:12px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif;
+    margin-top:10px; min-height:52px;
+  }
+  button.ghost:active{background:var(--asphalt-700);}
+  .geo-status{font-size:12.5px; color:var(--ink-faint); margin-top:9px; min-height:16px; line-height:1.4;}
+  .geo-status.ok{color:var(--green);}
+  .geo-status.err{color:var(--red);}
+  details summary{cursor:pointer; font-size:13px; color:var(--ink-dim); font-weight:700; padding:6px 0;}
+
+  .bottombar{
+    position:fixed; left:0; right:0; bottom:0; z-index:30;
+    background:rgba(13,16,19,0.95); backdrop-filter:blur(12px);
+    border-top:1px solid var(--line);
+    padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));
+  }
+  .bottombar-inner{max-width:680px; margin:0 auto;}
+  button.primary{
+    width:100%; background:var(--amber); color:#1a1300; border:0; border-radius:14px;
+    padding:18px; font-size:17px; font-weight:700; cursor:pointer; font-family:'Space Grotesk',sans-serif;
+    letter-spacing:.01em; min-height:58px;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  button.primary:active{transform:scale(.98);}
+  button.primary:disabled{opacity:.75;}
+  .spinner{
+    width:18px; height:18px; border-radius:50%; flex-shrink:0;
+    border:2.5px solid rgba(26,19,0,0.25); border-top-color:#1a1300;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .hero{
+    border-radius:var(--border-radius);
+    background:linear-gradient(160deg, #16130a, #100e08);
+    border:1px solid #2e2410;
+    padding:20px; position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0px, rgba(255,255,255,.015) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+  }
+  .hero-eyebrow{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#8a7440; font-weight:700;}
+  .hero-name{font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; margin-top:5px; color:#f3ede2;}
+  .hero-meta{font-size:13px; color:#8a7440; margin-top:2px;}
+  .led{
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:52px; color:#ffb648;
+    text-shadow:0 0 18px rgba(255,182,72,.35); margin-top:12px; letter-spacing:.01em; line-height:1;
+  }
+  .led span{font-size:22px; opacity:.7; margin-left:5px;}
+  .hero-badges{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
+  .badge{font-size:12px; font-weight:700; padding:6px 11px; border-radius:20px; letter-spacing:.02em; display:inline-flex; align-items:center; gap:4px; line-height:1;}
+  .badge.es{background:#3a1414; color:#ff8a8a;}
+  .badge.gi{background:#132a33; color:#7fd4e8;}
+  .badge.dist{background:var(--asphalt-700); color:var(--ink-dim);}
+  .hero-nav{
+    margin-top:14px; width:100%; background:var(--amber); color:#1a1300; border:0; border-radius:12px;
+    padding:14px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; min-height:50px;
+  }
+
+  .results-head{display:flex; flex-direction:column; align-items:stretch; gap:10px; margin-bottom:10px;}
+  .results-head h2{font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; margin:0; min-height:18px;}
+  .view-toggle{width:100%;}
+  #sortToggle{width:100%; margin-bottom:12px;}
+  /* ---------- Mapa a pantalla completa ---------- */
+  #mapView{
+    position:fixed; inset:0; z-index:1500; background:var(--asphalt-950);
+    flex-direction:column; gap:8px;
+    padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(10px + env(safe-area-inset-bottom,0px));
+  }
+  .map-topbar{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+  .map-back{
+    height:42px; padding:0 16px; border-radius:12px; flex-shrink:0;
+    background:var(--asphalt-800); border:1.5px solid var(--asphalt-600);
+    color:var(--ink); font-size:14px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  .map-back:active{background:var(--asphalt-700);}
+  #mapStyleSeg{flex-shrink:0;}
+  #mapView .empty{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+
+  #mapContainer{
+    flex:1; min-height:0; width:100%; border-radius:var(--border-radius); overflow:hidden;
+    border:1px solid var(--line); background:var(--asphalt-700);
+    position:relative; isolation:isolate; z-index:0;
+  }
+  .price-marker{
+    position:absolute; transform:translate(-50%,-50%); white-space:nowrap;
+    padding:5px 9px; border-radius:13px; border:2px solid #fff;
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px; line-height:1;
+    box-shadow:0 2px 7px rgba(0,0,0,.45);
+  }
+  .map-legend{display:flex; gap:16px; flex-shrink:0; font-size:12.5px; color:var(--ink-dim); flex-wrap:wrap; justify-content:center;}
+  .map-legend span{display:inline-flex; align-items:center; gap:6px;}
+  .dot{width:11px; height:11px; border-radius:50%; display:inline-block; box-shadow:0 0 0 1px rgba(0,0,0,.15);}
+  .dot.barato{background:#22c55e;}
+  .dot.medio{background:#fbbf24;}
+  .dot.caro{background:#ef4444;}
+  .dot.you{background:#3b82f6;}
+
+  .card{
+    background:var(--asphalt-800); border:1px solid var(--line); border-radius:14px;
+    padding:15px 16px; display:flex; align-items:center; gap:13px; margin-bottom:9px; cursor:pointer;
+    box-shadow:0 1px 3px rgba(0,0,0,.08); transition:transform .1s, box-shadow .15s, background-color .1s;
+  }
+  .card:active{background:var(--asphalt-700); transform:scale(.99); box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .card .rank{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; color:var(--ink-faint); width:22px; flex-shrink:0; text-align:center;}
+  .card .info{flex:1; min-width:0;}
+  .card .name{font-size:15px; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .card .addr{font-size:12.5px; color:var(--ink-faint); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .card .tags{display:flex; gap:6px; margin-top:7px;}
+  .card .price{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:19px; color:var(--ink); text-align:right; flex-shrink:0;}
+  .card .price small{display:block; font-size:10.5px; font-weight:500; color:var(--ink-faint); text-align:right;}
+  .card.cheapest .price{color:var(--amber);}
+  .navbtn{
+    background:var(--asphalt-900); border:1.5px solid var(--asphalt-600); border-radius:10px;
+    width:38px; height:38px; flex-shrink:0; font-size:17px; cursor:pointer; color:var(--ink-dim);
+  }
+  .navbtn:active{background:var(--asphalt-700);}
+
+  .empty{text-align:center; padding:40px 16px; color:var(--ink-faint); font-size:14px; line-height:1.6;}
+  .empty b{color:var(--ink-dim); display:block; margin-bottom:5px; font-size:15px;}
+
+  /* ---------- Modal de detalle ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(8,10,12,0.72); backdrop-filter:blur(3px);
+    z-index:2000; display:none; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-sheet{
+    position:relative; width:100%; max-width:680px; background:var(--asphalt-800); border:1px solid var(--line);
+    border-radius:20px 20px 0 0; padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));
+    max-height:85vh; overflow-y:auto;
+  }
+  .modal-handle{width:40px; height:4px; border-radius:2px; background:var(--asphalt-600); margin:0 auto 16px;}
+  .modal-close{
+    position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%;
+    background:var(--asphalt-700); border:0; color:var(--ink-dim); font-size:18px; cursor:pointer;
+  }
+  .modal-fav{
+    position:absolute; top:16px; right:60px; width:36px; height:36px; border-radius:50%;
+    background:var(--asphalt-700); border:0; color:var(--ink-dim); font-size:18px; cursor:pointer;
+  }
+  .modal-fav.active{color:var(--amber); background:var(--amber-dim);}
+  .modal-title{font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; margin:0 70px 4px 0;}
+  .modal-addr{font-size:13.5px; color:var(--ink-faint); line-height:1.5;}
+  .modal-badges{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  .modal-section-title{font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); font-weight:700; margin:20px 0 6px;}
+  .fuel-row{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--asphalt-700);}
+  .fuel-row:last-child{border-bottom:0;}
+  .fuel-row .fname{font-size:14px; color:var(--ink-dim); font-weight:600;}
+  .fuel-row.selected .fname{color:var(--amber);}
+  .fuel-row .fprice{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; color:var(--ink); text-align:right;}
+  .fuel-row .fprice small{display:block; font-size:10.5px; font-weight:500; color:var(--ink-faint);}
+  .modal-info-line{font-size:13px; color:var(--ink-dim); margin-top:8px; line-height:1.5;}
+  .modal-info-line b{color:var(--ink); font-weight:600;}
+  .hist-list{max-height:170px; overflow-y:auto; margin-top:8px; border-top:1px solid var(--asphalt-700);}
+  .hist-row{display:flex; justify-content:space-between; font-size:12.5px; color:var(--ink-dim); padding:7px 0; border-bottom:1px solid var(--asphalt-700);}
+  .hist-row span:last-child{font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--ink);}
+  .modal-nav{
+    margin-top:20px; width:100%; background:var(--amber); color:#1a1300; border:0; border-radius:12px;
+    padding:15px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; min-height:52px;
+  }
+
+  footer{max-width:680px; margin:28px auto 0; padding:0 14px; text-align:center;}
+  .foot-note{font-size:11.5px; color:var(--ink-faint); line-height:1.6;}
+  .foot-note b{color:var(--ink-dim);}
+
+  @media (max-width:380px){ .led{font-size:42px;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Abrir menú">☰</button>
+    <div class="brand">
+      <div class="brand-mark">⛽</div>
+      <div style="min-width:0;">
+        <h1>Surtidor</h1>
+        <div class="subtitle">España ↔ Gibraltar</div>
+      </div>
+    </div>
+    <button class="header-fuel-chip" id="fuelChip" type="button"></button>
+  </div>
+</header>
+
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <span class="drawer-title">Menú</span>
+    <button class="icon-btn" id="drawerClose" type="button" aria-label="Cerrar menú">✕</button>
+  </div>
+  <div class="drawer-body">
+
+    <details class="drawer-section" open>
+      <summary class="drawer-label">⛽ Combustible<span class="chev">▾</span></summary>
+      <div class="fuel-list" id="fuelGrid"></div>
+    </details>
+
+    <details class="drawer-section">
+      <summary class="drawer-label">🌍 Países<span class="chev">▾</span></summary>
+      <div class="brand-filter-list">
+        <label class="brand-row">
+          <input type="checkbox" id="countryEsCheck" checked>
+          <svg width="14" height="10" viewBox="0 0 16 11" style="flex-shrink:0;border-radius:2px;"><rect width="16" height="11" fill="#AA151B"/><rect y="2.75" width="16" height="5.5" fill="#F1BF00"/></svg>
+          <span>España</span>
+        </label>
+        <label class="brand-row">
+          <input type="checkbox" id="countryGiCheck" checked>
+          <svg width="14" height="10" viewBox="0 0 16 11" style="flex-shrink:0;border-radius:2px;"><rect width="16" height="11" fill="#ffffff"/><rect y="7.3" width="16" height="3.7" fill="#C8102E"/></svg>
+          <span>Gibraltar</span>
+        </label>
+      </div>
+    </details>
+
+    <details class="drawer-section">
+      <summary class="drawer-label">🏷️ Marcas<span class="chev">▾</span></summary>
+      <div class="drawer-actions">
+        <button type="button" class="link-btn" id="brandShowAll">Todas</button>
+        <button type="button" class="link-btn" id="brandHideAll">Ninguna</button>
+      </div>
+      <div id="brandFilterList" class="brand-filter-list">
+        <div class="drawer-hint">Busca primero para ver las marcas disponibles.</div>
+      </div>
+    </details>
+
+    <details class="drawer-section">
+      <summary class="drawer-label">🎨 Tema<span class="chev">▾</span></summary>
+      <div class="theme-grid" id="themeGrid">
+        <button class="theme-btn" data-theme="light" type="button"><span class="swatch swatch-light"></span>Claro</button>
+        <button class="theme-btn" data-theme="cream" type="button"><span class="swatch swatch-cream"></span>Crema</button>
+        <button class="theme-btn active" data-theme="dark" type="button"><span class="swatch swatch-dark"></span>Oscuro</button>
+      </div>
+    </details>
+
+  </div>
+</aside>
+
+<main>
+
+  <section>
+    <div class="panel">
+      <div class="panel-title">📍 Zona de búsqueda</div>
+
+      <div class="field">
+        <label>Radio de búsqueda</label>
+        <div class="stepper">
+          <button type="button" id="radiusMinus">−</button>
+          <input type="number" id="radiusInput" value="15" min="1" max="300">
+          <button type="button" id="radiusPlus">+</button>
+        </div>
+      </div>
+
+      <label>Ubicación</label>
+      <button class="ghost" id="geoBtn" type="button" style="margin-top:0;">📍 &nbsp;Usar mi ubicación actual</button>
+      <div class="geo-status" id="geoStatus">Sin ubicación · se usará Algeciras (centro) como referencia</div>
+
+      <details style="margin-top:12px;">
+        <summary>Ajustar coordenadas manualmente</summary>
+        <div class="field" style="margin-top:10px;"><label>Latitud</label><input type="text" id="latInput" value="36.1408"></div>
+        <div class="field"><label>Longitud</label><input type="text" id="lngInput" value="-5.4562"></div>
+      </details>
+    </div>
+  </section>
+
+  <section id="heroSection" style="display:none;"></section>
+
+  <section id="resultsSection">
+    <div class="results-head">
+      <h2 id="resultsCount"></h2>
+      <div class="segmented sm view-toggle" id="viewToggle">
+        <button data-view="lista" class="active">☰ Lista</button>
+        <button data-view="mapa">📍 Mapa</button>
+        <button data-view="favoritos">⭐ Favoritos</button>
+      </div>
+    </div>
+    <div class="segmented sm" id="sortToggle">
+      <button data-sort="price" class="active">⬇️ Precio</button>
+      <button data-sort="distance">📍 Distancia</button>
+    </div>
+
+    <div id="listView">
+      <div class="empty"><b>Todavía no has buscado nada</b>Elige combustible, radio y ubicación, y pulsa «Buscar precios» abajo.<br>Los precios de España y Gibraltar se descargan en directo.</div>
+    </div>
+
+    <div id="mapView" style="display:none;">
+      <div class="map-topbar">
+        <button class="map-back" id="mapCloseBtn" type="button">← Volver</button>
+        <button class="header-fuel-chip" id="mapFuelChip" type="button"></button>
+      </div>
+      <div class="empty" id="mapEmpty">Realiza una búsqueda para ver el mapa.</div>
+      <div class="segmented sm" id="mapStyleSeg" style="display:none;">
+        <button data-style="calles">Calles</button>
+        <button data-style="satelite">Satélite</button>
+        <button data-style="claro">Claro</button>
+        <button data-style="oscuro">Oscuro</button>
+      </div>
+      <div id="mapContainer" style="display:none;"></div>
+      <div class="map-legend" style="display:none;">
+        <span><i class="dot barato"></i> Barato</span>
+        <span><i class="dot medio"></i> Medio</span>
+        <span><i class="dot caro"></i> Caro</span>
+        <span><i class="dot you"></i> Tú</span>
+      </div>
+    </div>
+
+    <div id="favView" style="display:none;"></div>
+  </section>
+
+</main>
+
+<div class="modal-overlay" id="detailOverlay">
+  <div class="modal-sheet" id="detailSheet"></div>
+</div>
+
+<div class="bottombar">
+  <div class="bottombar-inner">
+    <button class="primary" id="searchBtn" type="button">Buscar precios</button>
+  </div>
+</div>
+
+<footer>
+  <p class="foot-note">
+    <b>Surtidor</b> v-9.00.00 · Xavibc<br>
+    España: datos oficiales en directo del Ministerio para la Transición Ecológica, por provincias cercanas a tu ubicación.<br>
+    Gibraltar: datos en directo agregados por comoestaelgas.com (fuente de terceros no documentada).<br>
+    Tema, combustible, marcas, radio, ubicación manual y favoritos se guardan en este navegador y se mantienen entre sesiones.
+  </p>
+</footer>
+
+<script>
+(function(){
+
+  /* ============ CONFIG ============ */
+
+  const SUPA_URL = "https://ilhbuvvpkzxyfatflwkd.supabase.co";
+  const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsaGJ1dnZwa3p4eWZhdGZsd2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjM4NjYsImV4cCI6MjA4OTU5OTg2Nn0.5jRjDfJzP-KNQtSQh-ABjRbyuFN3vz57I5MwxB2fScg";
+  const GBP_TO_EUR_FALLBACK = 1.17;
+
+  const FUELS = [
+    {id:"g95", ico:"⛽", esKey:"Precio Gasolina 95 E5",  giCode:"P95",            label:"Gasolina 95",     sub:"E5",      group:"gasolina"},
+    {id:"g98", ico:"⛽", esKey:"Precio Gasolina 98 E5",  giCode:"P98",            label:"Gasolina 98",     sub:"E5",      group:"gasolina"},
+    {id:"da",  ico:"🛢️", esKey:"Precio Gasoleo A",       giCode:"DIESEL",         label:"Gasóleo A",       sub:"Diésel",  group:"diesel"},
+    {id:"dp",  ico:"🛢️", esKey:"Precio Gasoleo Premium", giCode:"DIESEL_PREMIUM", label:"Gasóleo Premium", sub:"Diésel+", group:"diesel"}
+  ];
+
+  const PROVINCIAS = [
+    ["01","Álava",42.85,-2.67],["02","Albacete",38.99,-1.86],["03","Alicante",38.35,-0.48],
+    ["04","Almería",36.84,-2.47],["05","Ávila",40.66,-4.70],["06","Badajoz",38.88,-6.97],
+    ["07","Baleares",39.57,2.65],["08","Barcelona",41.39,2.17],["09","Burgos",42.34,-3.70],
+    ["10","Cáceres",39.48,-6.37],["11","Cádiz",36.53,-6.30],["12","Castellón",39.99,-0.04],
+    ["13","Ciudad Real",38.99,-3.93],["14","Córdoba",37.89,-4.78],["15","A Coruña",43.36,-8.41],
+    ["16","Cuenca",40.07,-2.14],["17","Girona",41.98,2.82],["18","Granada",37.18,-3.60],
+    ["19","Guadalajara",40.63,-3.17],["20","Gipuzkoa",43.32,-1.98],["21","Huelva",37.26,-6.95],
+    ["22","Huesca",42.14,-0.41],["23","Jaén",37.77,-3.79],["24","León",42.60,-5.57],
+    ["25","Lleida",41.62,0.62],["26","La Rioja",42.47,-2.45],["27","Lugo",43.01,-7.56],
+    ["28","Madrid",40.42,-3.70],["29","Málaga",36.72,-4.42],["30","Murcia",37.99,-1.13],
+    ["31","Navarra",42.82,-1.65],["32","Ourense",42.34,-7.86],["33","Asturias",43.36,-5.85],
+    ["34","Palencia",42.01,-4.53],["35","Las Palmas",28.10,-15.41],["36","Pontevedra",42.43,-8.65],
+    ["37","Salamanca",40.97,-5.66],["38","Santa Cruz de Tenerife",28.47,-16.25],["39","Cantabria",43.46,-3.81],
+    ["40","Segovia",40.95,-4.12],["41","Sevilla",37.39,-5.99],["42","Soria",41.76,-2.47],
+    ["43","Tarragona",41.12,1.25],["44","Teruel",40.34,-1.11],["45","Toledo",39.86,-4.03],
+    ["46","Valencia",39.47,-0.38],["47","Valladolid",41.65,-4.72],["48","Bizkaia",43.26,-2.92],
+    ["49","Zamora",41.50,-5.75],["50","Zaragoza",41.65,-0.89],["51","Ceuta",35.89,-5.32],
+    ["52","Melilla",35.29,-2.94]
+  ];
+
+  /* ============ PERSISTENCIA (localStorage) ============ */
+  // Esta app se usa como archivo abierto directamente en el navegador (no dentro de un editor
+  // en línea), así que localStorage funciona con normalidad y persiste entre sesiones.
+  function storageGet(key, fallback){
+    try{
+      const raw = localStorage.getItem("surtidor_" + key);
+      return raw !== null ? JSON.parse(raw) : fallback;
+    }catch(e){ return fallback; }
+  }
+  function storageSet(key, value){
+    try{ localStorage.setItem("surtidor_" + key, JSON.stringify(value)); }catch(e){ /* almacenamiento no disponible: seguimos sin guardar */ }
+  }
+
+  let userLoc = {lat:36.1408, lng:-5.4562, source:"Algeciras (por defecto)"};
+  const savedManualLoc = storageGet("manualLoc", null);
+  if(savedManualLoc && typeof savedManualLoc.lat === "number" && typeof savedManualLoc.lng === "number"){
+    userLoc = {lat:savedManualLoc.lat, lng:savedManualLoc.lng, source:"última ubicación guardada"};
+  }
+
+  let selectedFuel = FUELS.find(f => f.id === storageGet("fuel", null)) || FUELS[0];
+  let hiddenCountries = new Set(storageGet("hiddenCountries", []));
+  let currentView = "lista";
+  let sortMode = storageGet("sortMode", "price");
+  let lastResults = [];     // resultados visibles tras aplicar el filtro de marcas
+  let rawCombined = [];     // resultados de la última búsqueda sin filtrar por marca
+  let renderedList = [];    // lo que se está mostrando ahora mismo en la lista
+  let favRenderedList = []; // lo que se está mostrando ahora mismo en favoritos
+  let allBrands = new Set(storageGet("allBrands", []));
+  let hiddenBrands = new Set(storageGet("hiddenBrands", []));
+  let favorites = storageGet("favorites", []); // {key, country, name, addr, lat, lng, stationId, esId}
+  let map = null, markerLayer = null, mapMarkerList = [];
+
+  let esCache = {provinces: new Set(), rows: []};
+  let giCache = {loaded:false, stations:null, prices:null};
+
+  /* ============ UTILIDADES ============ */
+
+  function haversine(lat1, lng1, lat2, lng2){
+    const R = 6371;
+    const dLat = (lat2-lat1) * Math.PI/180;
+    const dLng = (lng2-lng1) * Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  function parseEsNumber(str){
+    if(!str) return null;
+    const n = parseFloat(String(str).replace(",", "."));
+    return isNaN(n) ? null : n;
+  }
+  function fmtPrice(n){ return n.toFixed(3).replace(".", ","); }
+  const FLAG_ES = '<svg width="14" height="10" viewBox="0 0 16 11" style="flex-shrink:0;border-radius:2px;"><rect width="16" height="11" fill="#AA151B"/><rect y="2.75" width="16" height="5.5" fill="#F1BF00"/></svg>';
+  const FLAG_GI = '<svg width="14" height="10" viewBox="0 0 16 11" style="flex-shrink:0;border-radius:2px;"><rect width="16" height="11" fill="#ffffff"/><rect y="7.3" width="16" height="3.7" fill="#C8102E"/></svg>';
+  function countryFlag(c){ return c === "ES" ? FLAG_ES : FLAG_GI; }
+  function countryBadge(c){ return countryFlag(c) + (c === "ES" ? "ES" : "GI"); }
+
+  function nearbyProvinceCodes(loc, radius){
+    const buffer = 100;
+    const cap = radius > 100 ? 8 : 4;
+    return PROVINCIAS
+      .map(p=>({code:p[0], d:haversine(loc.lat, loc.lng, p[2], p[3])}))
+      .filter(p=>p.d <= radius + buffer)
+      .sort((a,b)=>a.d-b.d)
+      .slice(0, Math.max(1,cap))
+      .map(p=>p.code);
+  }
+
+  function pickGiPrice(stationId, fuelCode){
+    if(!giCache.prices) return null;
+    const rows = giCache.prices.filter(p => p.station_id === stationId && p.fuel_code === fuelCode);
+    if(!rows.length) return null;
+    const eurRow = rows.find(r => r.currency === "EUR");
+    const gbpRow = rows.find(r => r.currency === "GBP");
+    if(eurRow) return {price: eurRow.price_per_litre, currency:"€", gbpPrice: gbpRow ? gbpRow.price_per_litre : null};
+    if(gbpRow) return {price: gbpRow.price_per_litre * GBP_TO_EUR_FALLBACK, currency:"€", approx:true, gbpPrice: gbpRow.price_per_litre};
+    const r = rows[0];
+    return {price:r.price_per_litre, currency: r.currency === "GBP" ? "£" : "€"};
+  }
+
+  function stationHistoryKey(item){
+    if(item.country === "GI") return "GI:" + item.stationId;
+    const id = item.raw && item.raw["IDEESS"];
+    return "ES:" + (id || (item.name + "|" + item.addr));
+  }
+
+  // Ninguna de las dos fuentes de datos ofrece histórico: lo construimos nosotros,
+  // registrando (como máximo una vez al día) el precio de los 4 combustibles de cada
+  // gasolinera que aparezca en una búsqueda, a partir de ahora.
+  const HISTORY_MAX_POINTS = 60;
+  const HISTORY_MAX_STATIONS = 400;
+
+  function recordHistoryBatch(items){
+    if(!items.length) return;
+    const today = new Date().toISOString().slice(0,10);
+    const history = storageGet("history", {});
+    let order = storageGet("historyOrder", []);
+
+    items.forEach(item=>{
+      const key = stationHistoryKey(item);
+      const oi = order.indexOf(key);
+      if(oi >= 0) order.splice(oi, 1);
+      order.push(key);
+      if(!history[key]) history[key] = {};
+
+      FUELS.forEach(f=>{
+        let price = null;
+        if(item.country === "ES" && item.raw){
+          price = parseEsNumber(item.raw[f.esKey]);
+        }else if(item.country === "GI" && item.stationId){
+          const picked = pickGiPrice(item.stationId, f.giCode);
+          if(picked) price = picked.price;
+        }
+        if(price === null) return;
+        if(!history[key][f.id]) history[key][f.id] = [];
+        const arr = history[key][f.id];
+        const last = arr[arr.length-1];
+        if(!last || last.d !== today) arr.push({d:today, p:price});
+        else last.p = price;
+        if(arr.length > HISTORY_MAX_POINTS) arr.splice(0, arr.length - HISTORY_MAX_POINTS);
+      });
+    });
+
+    while(order.length > HISTORY_MAX_STATIONS){
+      const oldest = order.shift();
+      delete history[oldest];
+    }
+    storageSet("history", history);
+    storageSet("historyOrder", order);
+  }
+
+  function sparklineSvg(points){
+    if(points.length < 2) return "";
+    const prices = points.map(p=>p.p);
+    const min = Math.min(...prices), max = Math.max(...prices);
+    const range = (max - min) || 0.001;
+    const w = 260, h = 46, pad = 5;
+    const stepX = (w - pad*2) / (points.length - 1);
+    const coords = points.map((p,i)=>{
+      const x = pad + i*stepX;
+      const y = pad + (1 - (p.p - min)/range) * (h - pad*2);
+      return x.toFixed(1) + "," + y.toFixed(1);
+    }).join(" ");
+    const rising = points[points.length-1].p >= points[0].p;
+    const color = rising ? "#ef4444" : "#22c55e";
+    return `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="display:block;">
+      <polyline points="${coords}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>`;
+  }
+
+  function historySectionHtml(item){
+    const key = stationHistoryKey(item);
+    const history = storageGet("history", {});
+    const arr = (history[key] && history[key][selectedFuel.id]) || [];
+    const title = `<div class="modal-section-title">📈 Historial de precios · ${selectedFuel.label}</div>`;
+    if(arr.length < 2){
+      return title + `<div class="drawer-hint">${arr.length === 0
+        ? "Todavía no hay histórico de esta gasolinera. Se irá registrando automáticamente cada vez que aparezca en una búsqueda (como máximo, un dato por día)."
+        : "De momento solo hay un día registrado — vuelve a consultar en otra ocasión para ver la evolución."}</div>`;
+    }
+    const recent = arr.slice(-14);
+    const first = recent[0], lastP = recent[recent.length-1];
+    const diff = lastP.p - first.p;
+    const diffTxt = (diff === 0 ? "sin cambios" : (diff > 0 ? "+" : "") + fmtPrice(diff) + " €") + ` desde el ${first.d}`;
+    const rows = recent.slice().reverse().map(p=>`<div class="hist-row"><span>${p.d}</span><span>${fmtPrice(p.p)} €</span></div>`).join("");
+    return title + sparklineSvg(recent) +
+      `<div class="drawer-hint" style="margin-top:4px;">${diffTxt}</div>
+       <div class="hist-list">${rows}</div>`;
+  }
+
+  function assignPriceTiers(list){
+    const sorted = [...list].sort((a,b)=>a.price-b.price);
+    const n = sorted.length;
+    sorted.forEach((item, idx)=>{
+      const third = n / 3;
+      item.priceColor = idx < third ? "#22c55e" : (idx < third*2 ? "#fbbf24" : "#ef4444");
+    });
+  }
+
+  function sortList(list){
+    const copy = [...list];
+    if(sortMode === "distance") copy.sort((a,b)=>a.dist-b.dist);
+    else copy.sort((a,b)=>a.price-b.price);
+    return copy;
+  }
+  function cheapestOf(list){
+    if(!list.length) return null;
+    return list.reduce((min,item)=> item.price < min.price ? item : min, list[0]);
+  }
+
+  function favKeyOf(item){
+    if(item.country === "GI") return "GI:" + item.stationId;
+    const id = item.raw && item.raw["IDEESS"];
+    return "ES:" + (id || (item.name + "|" + item.addr));
+  }
+  function isFavorite(item){ return favorites.some(f=>f.key === favKeyOf(item)); }
+  function toggleFavorite(item){
+    const key = favKeyOf(item);
+    const idx = favorites.findIndex(f=>f.key===key);
+    if(idx>=0){
+      favorites.splice(idx,1);
+    }else{
+      favorites.push({
+        key, country:item.country, name:item.name, addr:item.addr,
+        lat:item.lat, lng:item.lng,
+        stationId: item.stationId || null,
+        esId: (item.raw && item.raw["IDEESS"]) || null
+      });
+    }
+    storageSet("favorites", favorites);
+    if(currentView === "favoritos") renderFavoritesView();
+    return idx < 0; // true si ahora es favorito
+  }
+
+  /* ============ UI: menú lateral ============ */
+
+  const drawer = document.getElementById("drawer");
+  const drawerOverlay = document.getElementById("drawerOverlay");
+  const fuelChip = document.getElementById("fuelChip");
+
+  function openDrawer(){ drawer.classList.add("open"); drawerOverlay.classList.add("open"); }
+  function closeDrawer(){ drawer.classList.remove("open"); drawerOverlay.classList.remove("open"); }
+  document.getElementById("menuBtn").onclick = openDrawer;
+  document.getElementById("drawerClose").onclick = closeDrawer;
+  drawerOverlay.onclick = closeDrawer;
+  fuelChip.onclick = openDrawer;
+
+  const mapFuelChip = document.getElementById("mapFuelChip");
+  mapFuelChip.onclick = openDrawer;
+  function updateFuelChip(){
+    const txt = selectedFuel.ico + " " + selectedFuel.label;
+    fuelChip.textContent = txt;
+    mapFuelChip.textContent = txt;
+  }
+
+  /* ============ UI: tema ============ */
+
+  function setTheme(theme){
+    if(theme === "dark") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", theme);
+    document.querySelectorAll(".theme-btn").forEach(b=> b.classList.toggle("active", b.dataset.theme === theme));
+    storageSet("theme", theme);
+    if(map) setTimeout(()=> map.invalidateSize(), 60);
+  }
+  document.getElementById("themeGrid").addEventListener("click", (e)=>{
+    const b = e.target.closest(".theme-btn");
+    if(!b) return;
+    setTheme(b.dataset.theme);
+  });
+
+  /* ============ UI: combustible ============ */
+
+  const fuelGrid = document.getElementById("fuelGrid");
+  FUELS.forEach(f=>{
+    const btn = document.createElement("button");
+    btn.className = "fuel-btn" + (f.group === "diesel" ? " diesel" : "") + (f === selectedFuel ? " active" : "");
+    btn.innerHTML = `<span class="ico">${f.ico}</span><span class="txt"><b>${f.label}</b><small>${f.sub}</small></span>`;
+    btn.onclick = ()=>{
+      selectedFuel = f;
+      document.querySelectorAll(".fuel-btn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      updateFuelChip();
+      closeDrawer();
+      storageSet("fuel", f.id);
+      // los precios de los resultados son los del combustible con el que se buscó:
+      // hay que repetir la búsqueda (los datos ya están en caché, así que es casi instantáneo)
+      if(rawCombined.length) searchBtn.click();
+      if(currentView === "favoritos") renderFavoritesView();
+    };
+    fuelGrid.appendChild(btn);
+  });
+  updateFuelChip();
+
+  /* ============ UI: marcas ============ */
+
+  function brandOf(item){ return item.brand || item.name; }
+
+  function renderBrandFilterList(){
+    const container = document.getElementById("brandFilterList");
+    const brands = [...allBrands].sort((a,b)=>a.localeCompare(b,'es'));
+    if(!brands.length){
+      container.innerHTML = '<div class="drawer-hint">Busca primero para ver las marcas disponibles.</div>';
+      return;
+    }
+    container.innerHTML = brands.map(b=>{
+      const checked = !hiddenBrands.has(b);
+      return `<label class="brand-row"><input type="checkbox" data-brand="${encodeURIComponent(b)}" ${checked?"checked":""}><span>${b}</span></label>`;
+    }).join("");
+  }
+  document.getElementById("brandFilterList").addEventListener("change", (e)=>{
+    const cb = e.target.closest("input[type=checkbox]");
+    if(!cb) return;
+    const brand = decodeURIComponent(cb.dataset.brand);
+    if(cb.checked) hiddenBrands.delete(brand); else hiddenBrands.add(brand);
+    storageSet("hiddenBrands", [...hiddenBrands]);
+    if(rawCombined.length) applyBrandFilterAndRender();
+  });
+  document.getElementById("brandShowAll").onclick = ()=>{
+    hiddenBrands.clear();
+    storageSet("hiddenBrands", []);
+    renderBrandFilterList();
+    if(rawCombined.length) applyBrandFilterAndRender();
+  };
+  document.getElementById("brandHideAll").onclick = ()=>{
+    hiddenBrands = new Set(allBrands);
+    storageSet("hiddenBrands", [...hiddenBrands]);
+    renderBrandFilterList();
+    if(rawCombined.length) applyBrandFilterAndRender();
+  };
+
+  function applyBrandFilterAndRender(){
+    const filtered = rawCombined.filter(item => !hiddenBrands.has(brandOf(item)) && !hiddenCountries.has(item.country));
+    assignPriceTiers(filtered);
+    lastResults = filtered;
+    renderResults(sortList(filtered));
+  }
+
+  /* ============ UI: países, radio, ubicación, orden ============ */
+
+  function onCountryCheckChange(){
+    hiddenCountries = new Set();
+    if(!document.getElementById("countryEsCheck").checked) hiddenCountries.add("ES");
+    if(!document.getElementById("countryGiCheck").checked) hiddenCountries.add("GI");
+    storageSet("hiddenCountries", [...hiddenCountries]);
+    if(rawCombined.length) applyBrandFilterAndRender();
+  }
+  document.getElementById("countryEsCheck").addEventListener("change", onCountryCheckChange);
+  document.getElementById("countryGiCheck").addEventListener("change", onCountryCheckChange);
+
+  document.getElementById("sortToggle").addEventListener("click", (e)=>{
+    const b = e.target.closest("button");
+    if(!b) return;
+    sortMode = b.dataset.sort;
+    document.querySelectorAll("#sortToggle button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    storageSet("sortMode", sortMode);
+    if(lastResults.length) renderResults(sortList(lastResults));
+    if(currentView === "favoritos") renderFavoritesView();
+  });
+
+  const radiusInput = document.getElementById("radiusInput");
+  radiusInput.addEventListener("change", ()=> storageSet("radius", radiusInput.value));
+  document.getElementById("radiusMinus").onclick = ()=>{ radiusInput.value = Math.max(1, (parseInt(radiusInput.value)||15) - 5); storageSet("radius", radiusInput.value); };
+  document.getElementById("radiusPlus").onclick = ()=>{ radiusInput.value = Math.min(300, (parseInt(radiusInput.value)||15) + 5); storageSet("radius", radiusInput.value); };
+
+  const geoStatus = document.getElementById("geoStatus");
+  document.getElementById("geoBtn").onclick = ()=>{
+    if(!navigator.geolocation){
+      geoStatus.textContent = "Este navegador no soporta geolocalización.";
+      geoStatus.className = "geo-status err";
+      return;
+    }
+    geoStatus.textContent = "Localizando…";
+    geoStatus.className = "geo-status";
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        userLoc = {lat:pos.coords.latitude, lng:pos.coords.longitude, source:"GPS del dispositivo"};
+        document.getElementById("latInput").value = userLoc.lat.toFixed(5);
+        document.getElementById("lngInput").value = userLoc.lng.toFixed(5);
+        storageSet("manualLoc", {lat:userLoc.lat, lng:userLoc.lng});
+        geoStatus.textContent = "✓ Ubicación obtenida por GPS";
+        geoStatus.className = "geo-status ok";
+      },
+      err=>{
+        geoStatus.textContent = "No se pudo obtener tu ubicación (" + err.message + "). Usa las coordenadas manuales.";
+        geoStatus.className = "geo-status err";
+      },
+      {enableHighAccuracy:true, timeout:10000}
+    );
+  };
+  document.getElementById("latInput").addEventListener("change", syncManualCoords);
+  document.getElementById("lngInput").addEventListener("change", syncManualCoords);
+  function syncManualCoords(){
+    const lat = parseFloat(document.getElementById("latInput").value);
+    const lng = parseFloat(document.getElementById("lngInput").value);
+    if(!isNaN(lat) && !isNaN(lng)){
+      userLoc = {lat, lng, source:"coordenadas manuales"};
+      storageSet("manualLoc", {lat, lng});
+    }
+  }
+
+  /* ============ API: España (Ministerio) ============ */
+
+  async function fetchProvince(code){
+    const url = "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/FiltroProvincia/" + code;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("Ministerio HTTP " + res.status);
+    const data = await res.json();
+    return data.ListaEESSPrecio || [];
+  }
+  async function loadSpain(provinceCodes){
+    const missing = provinceCodes.filter(c => !esCache.provinces.has(c));
+    if(missing.length){
+      const pages = await Promise.all(missing.map(fetchProvince));
+      pages.forEach((rows, i)=>{
+        esCache.rows = esCache.rows.concat(rows);
+        esCache.provinces.add(missing[i]);
+      });
+    }
+  }
+
+  /* ============ API: Gibraltar (comoestaelgas / Supabase) ============ */
+
+  async function supaGet(path){
+    const res = await fetch(SUPA_URL + path, {headers:{apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY}});
+    if(!res.ok) throw new Error("stations HTTP " + res.status);
+    return res.json();
+  }
+  async function supaPost(path, body){
+    const res = await fetch(SUPA_URL + path, {
+      method:"POST",
+      headers:{apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json"},
+      body: JSON.stringify(body || {})
+    });
+    if(!res.ok) throw new Error("latest_prices HTTP " + res.status);
+    return res.json();
+  }
+  async function fetchAllPaginated(fetchPageFn){
+    let all = [], offset = 0, limit = 1000;
+    while(true){
+      const page = await fetchPageFn(offset, limit);
+      all = all.concat(page);
+      if(page.length < limit) break;
+      offset += limit;
+      if(offset > 20000) break;
+    }
+    return all;
+  }
+  async function loadGibraltar(){
+    if(giCache.loaded) return;
+    const [stationsList, prices] = await Promise.all([
+      fetchAllPaginated((o,l)=> supaGet(`/rest/v1/stations?select=*&is_active=eq.true&country=eq.GI&order=display_name.asc&offset=${o}&limit=${l}`)),
+      fetchAllPaginated((o,l)=> supaPost(`/rest/v1/rpc/latest_prices?offset=${o}&limit=${l}`, {}))
+    ]);
+    giCache.stations = new Map(stationsList.map(s=>[s.station_id, s]));
+    giCache.prices = prices.filter(p => giCache.stations.has(p.station_id));
+    giCache.loaded = true;
+  }
+
+  /* ============ BÚSQUEDA ============ */
+
+  const searchBtn = document.getElementById("searchBtn");
+  const resultsCount = document.getElementById("resultsCount");
+  const listView = document.getElementById("listView");
+  const heroSection = document.getElementById("heroSection");
+
+  searchBtn.onclick = async ()=>{
+    syncManualCoords();
+    searchBtn.disabled = true;
+    searchBtn.innerHTML = '<span class="spinner"></span>Buscando…';
+    listView.innerHTML = "";
+
+    const radius = parseFloat(radiusInput.value) || 15;
+
+    try{
+      let combined = [];
+
+      if(!hiddenCountries.has("ES")){
+        const provinceCodes = nearbyProvinceCodes(userLoc, radius);
+        await loadSpain(provinceCodes);
+        esCache.rows.forEach(st=>{
+          const priceStr = st[selectedFuel.esKey];
+          const price = parseEsNumber(priceStr);
+          if(price === null) return;
+          const lat = parseEsNumber(st["Latitud"]);
+          const lng = parseEsNumber(st["Longitud (WGS84)"]);
+          if(lat === null || lng === null) return;
+          const dist = haversine(userLoc.lat, userLoc.lng, lat, lng);
+          if(dist > radius) return;
+          combined.push({
+            country:"ES",
+            name:(st["Rótulo"]||"Estación").trim(),
+            brand:(st["Rótulo"]||"Independiente").trim(),
+            addr:[st["Dirección"], st["Localidad"]].filter(Boolean).join(", "),
+            lat, lng, price, currency:"€", dist,
+            raw: st,
+            horario: st["Horario"] || null
+          });
+        });
+      }
+
+      if(!hiddenCountries.has("GI")){
+        await loadGibraltar();
+        giCache.stations.forEach(st=>{
+          if(st.lat == null || st.lon == null) return;
+          const picked = pickGiPrice(st.station_id, selectedFuel.giCode);
+          if(!picked) return;
+          const dist = haversine(userLoc.lat, userLoc.lng, st.lat, st.lon);
+          if(dist > radius) return;
+          combined.push({
+            country:"GI",
+            name: st.display_name || st.brand || "Estación",
+            brand: st.brand || st.display_name || "Gibraltar",
+            addr: [st.address, st.municipality].filter(Boolean).join(", "),
+            lat: st.lat, lng: st.lon,
+            price: picked.price,
+            currency: picked.currency,
+            approx: !!picked.approx,
+            dist,
+            stationId: st.station_id,
+            horario: st.opening_hours || null
+          });
+        });
+      }
+
+      rawCombined = combined;
+      combined.forEach(item => allBrands.add(brandOf(item)));
+      storageSet("allBrands", [...allBrands]);
+      renderBrandFilterList();
+      applyBrandFilterAndRender();
+      recordHistoryBatch(combined);
+
+    }catch(err){
+      listView.innerHTML = `<div class="empty"><b>No se pudieron descargar los precios</b>
+        Alguna de las fuentes de datos no ha respondido correctamente. Prueba de nuevo en unos segundos.
+        <br><small>${(err && err.message) ? err.message : ""}</small></div>`;
+    }
+
+    searchBtn.disabled = false;
+    searchBtn.textContent = "Buscar precios";
+  };
+
+  function openNav(lat, lng){
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, "_blank");
+  }
+  window.__surtidorNav = openNav;
+  window.__surtidorMapDetail = function(i){
+    if(map) map.closePopup();
+    const r = mapMarkerList[i];
+    if(r) showDetail(r);
+  };
+
+  /* ============ VISTA LISTA / HERO ============ */
+
+  function renderResults(list){
+    if(list.length === 0){
+      heroSection.style.display = "none";
+      listView.innerHTML = `<div class="empty"><b>Sin resultados en ese radio</b>Prueba a ampliar el radio de búsqueda, o revisa el filtro de países y marcas en el menú.</div>`;
+      resultsCount.textContent = "";
+      renderedList = [];
+      updateMapVisibility([]);
+      return;
+    }
+
+    renderedList = list;
+    const cheapest = cheapestOf(lastResults);
+
+    heroSection.style.display = "block";
+    heroSection.innerHTML = `
+      <div class="hero" data-cheapest="1">
+        <div class="hero-eyebrow">Precio más bajo encontrado · ${selectedFuel.label} ${selectedFuel.sub}</div>
+        <div class="hero-name">${cheapest.name}</div>
+        <div class="hero-meta">${cheapest.addr}</div>
+        <div class="led">${fmtPrice(cheapest.price)} <span>${cheapest.currency}/L</span></div>
+        <div class="hero-badges">
+          <span class="badge ${cheapest.country === 'ES' ? 'es' : 'gi'}">${countryFlag(cheapest.country)}${cheapest.country === 'ES' ? 'ESPAÑA' : 'GIBRALTAR'}</span>
+          <span class="badge dist">${cheapest.dist.toFixed(1)} km</span>
+        </div>
+        <button class="hero-nav" type="button" onclick="window.__surtidorNav(${cheapest.lat},${cheapest.lng})">🧭 Cómo llegar</button>
+      </div>
+    `;
+
+    resultsCount.textContent = list.length + (list.length === 1 ? " resultado" : " resultados");
+
+    listView.innerHTML = list.map((r, i)=>`
+      <div class="card ${r === cheapest ? 'cheapest' : ''}" data-idx="${i}">
+        <div class="rank">${i+1}</div>
+        <div class="info">
+          <div class="name">${r.name}</div>
+          <div class="addr">${r.addr}</div>
+          <div class="tags">
+            <span class="badge ${r.country === 'ES' ? 'es' : 'gi'}">${countryBadge(r.country)}</span>
+            <span class="badge dist">${r.dist.toFixed(1)} km</span>
+          </div>
+        </div>
+        <div class="price">${fmtPrice(r.price)}${r.approx ? '≈' : ''}<small>${r.currency}/L</small></div>
+        <button class="navbtn" type="button" data-idx="${i}" aria-label="Cómo llegar">🧭</button>
+      </div>
+    `).join("");
+
+    if(currentView === "mapa") updateMapVisibility(list);
+  }
+
+  listView.addEventListener("click", (e)=>{
+    const navBtn = e.target.closest(".navbtn");
+    if(navBtn){
+      e.stopPropagation();
+      const r = renderedList[parseInt(navBtn.dataset.idx, 10)];
+      if(r) openNav(r.lat, r.lng);
+      return;
+    }
+    const card = e.target.closest(".card");
+    if(card){
+      const r = renderedList[parseInt(card.dataset.idx, 10)];
+      if(r) showDetail(r);
+    }
+  });
+
+  heroSection.addEventListener("click", (e)=>{
+    if(e.target.closest(".hero-nav")) return;
+    if(e.target.closest("[data-cheapest]")){
+      const cheapest = cheapestOf(lastResults);
+      if(cheapest) showDetail(cheapest);
+    }
+  });
+
+  /* ============ VISTA MAPA ============ */
+
+  const MAP_STYLES = {
+    calles:   {label:"Calles",   url:"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", attribution:"&copy; OpenStreetMap", subdomains:"abc", maxZoom:19},
+    satelite: {label:"Satélite", url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attribution:"Tiles &copy; Esri", maxZoom:19},
+    claro:    {label:"Claro",    url:"https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", attribution:"Tiles &copy; Esri", maxZoom:16},
+    oscuro:   {label:"Oscuro",   url:"https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", attribution:"Tiles &copy; Esri", maxZoom:16}
+  };
+  let mapStyle = null;
+  let currentTileLayer = null;
+
+  function setMapStyle(styleKey){
+    mapStyle = styleKey;
+    document.querySelectorAll("#mapStyleSeg button").forEach(b=> b.classList.toggle("active", b.dataset.style === styleKey));
+    storageSet("mapStyle", styleKey);
+    if(!map) return;
+    if(currentTileLayer) map.removeLayer(currentTileLayer);
+    const s = MAP_STYLES[styleKey];
+    currentTileLayer = L.tileLayer(s.url, {attribution:s.attribution, maxZoom:19, maxNativeZoom:s.maxZoom, subdomains: s.subdomains || "abc"}).addTo(map);
+  }
+  document.getElementById("mapStyleSeg").addEventListener("click", (e)=>{
+    const b = e.target.closest("button");
+    if(!b) return;
+    setMapStyle(b.dataset.style);
+  });
+
+  function updateMapVisibility(list){
+    const empty = document.getElementById("mapEmpty");
+    const cont = document.getElementById("mapContainer");
+    const styleSeg = document.getElementById("mapStyleSeg");
+    const legend = document.querySelector(".map-legend");
+    if(list && list.length){
+      empty.style.display = "none";
+      styleSeg.style.display = "flex";
+      cont.style.display = "block";
+      legend.style.display = "flex";
+      // esperamos a que el navegador aplique el display:block antes de medir el contenedor
+      requestAnimationFrame(()=> renderMap(list));
+    }else{
+      empty.style.display = "flex";
+      styleSeg.style.display = "none";
+      cont.style.display = "none";
+      legend.style.display = "none";
+    }
+  }
+
+  // El mapa se abre siempre a pantalla completa (capa fija por encima de la página).
+  // Al cerrarlo se vuelve a la pestaña desde la que se abrió.
+  let viewBeforeMap = "lista";
+
+  function setView(view){
+    if(view === "mapa" && currentView !== "mapa") viewBeforeMap = currentView;
+    currentView = view;
+    document.querySelectorAll("#viewToggle button").forEach(x=> x.classList.toggle("active", x.dataset.view === view));
+    document.getElementById("listView").style.display = view === "lista" ? "block" : "none";
+    document.getElementById("favView").style.display = view === "favoritos" ? "block" : "none";
+    document.getElementById("mapView").style.display = view === "mapa" ? "flex" : "none";
+    document.body.style.overflow = view === "mapa" ? "hidden" : "";
+    if(view === "mapa") updateMapVisibility(lastResults);
+    if(view === "favoritos") renderFavoritesView();
+  }
+
+  document.getElementById("viewToggle").addEventListener("click", (e)=>{
+    const b = e.target.closest("button");
+    if(!b) return;
+    setView(b.dataset.view);
+  });
+  document.getElementById("mapCloseBtn").onclick = ()=> setView(viewBeforeMap === "mapa" ? "lista" : viewBeforeMap);
+
+  function renderMap(list){
+    if(typeof L === "undefined") return;
+    if(!map){
+      map = L.map("mapContainer", {zoomControl:true});
+      markerLayer = L.layerGroup().addTo(map);
+      if(!mapStyle) mapStyle = (document.documentElement.getAttribute("data-theme") || "dark") === "dark" ? "oscuro" : "claro";
+      setMapStyle(mapStyle);
+    }
+    // el contenedor pudo estar oculto (display:none) hasta hace un instante: forzamos que Leaflet recalcule su tamaño
+    // ANTES de encuadrar, si no el zoom/centro se calcula mal y el mapa queda desplazado o "atascado"
+    map.invalidateSize();
+    markerLayer.clearLayers();
+
+    const bounds = [];
+    const youIcon = L.divIcon({className:"", html:'<div style="width:16px;height:16px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);"></div>', iconSize:[16,16]});
+    L.marker([userLoc.lat, userLoc.lng], {icon:youIcon}).addTo(markerLayer).bindPopup("Tu ubicación");
+    bounds.push([userLoc.lat, userLoc.lng]);
+
+    // los más baratos se dibujan por encima cuando las etiquetas se solapan
+    const ranked = [...list].sort((a,b)=> a.price - b.price);
+    const rankOf = new Map(ranked.map((r,i)=> [r, i]));
+
+    list.forEach((r, idx)=>{
+      const color = r.priceColor || "#22c55e";
+      const textColor = color === "#ef4444" ? "#ffffff" : "#111111";
+      const label = fmtPrice(r.price) + (r.approx ? "≈" : "");
+      const icon = L.divIcon({
+        className:"",
+        html:`<div class="price-marker" style="background:${color};color:${textColor};">${label}</div>`,
+        iconSize:[0,0], iconAnchor:[0,0], popupAnchor:[0,-16]
+      });
+      const pais = r.country === "ES" ? "España" : "Gibraltar";
+      L.marker([r.lat, r.lng], {icon, zIndexOffset:(list.length - rankOf.get(r)) * 10}).addTo(markerLayer)
+        .bindPopup(`<b>${r.name}</b><br>${pais} · ${fmtPrice(r.price)}${r.approx?'≈':''} ${r.currency}/L<br>${r.dist.toFixed(1)} km<br><a href="#" onclick="window.__surtidorMapDetail(${idx});return false;" style="color:#c8701a;font-weight:700;">Ver ficha completa →</a>`);
+      bounds.push([r.lat, r.lng]);
+    });
+    mapMarkerList = list;
+
+    if(bounds.length) map.fitBounds(bounds, {padding:[45,45]});
+
+    // red de seguridad: en algunos móviles el tamaño real tarda un instante más en estabilizarse
+    setTimeout(()=>{
+      if(currentView !== "mapa") return; // si ya se cerró el mapa, no medimos un contenedor oculto
+      map.invalidateSize();
+      if(bounds.length) map.fitBounds(bounds, {padding:[45,45]});
+    }, 250);
+  }
+
+  /* ============ VISTA FAVORITOS ============ */
+
+
+  function buildFavoriteDisplayItem(f){
+    let price = null, currency = "€", approx = false, raw = null;
+    if(f.country === "ES"){
+      raw = esCache.rows.find(s =>
+        (f.esId && s["IDEESS"] === f.esId) ||
+        (!f.esId && (s["Rótulo"]||"").trim() === f.name && [s["Dirección"], s["Localidad"]].filter(Boolean).join(", ") === f.addr)
+      ) || null;
+      if(raw){
+        const p = parseEsNumber(raw[selectedFuel.esKey]);
+        if(p !== null) price = p;
+      }
+    }else{
+      const picked = pickGiPrice(f.stationId, selectedFuel.giCode);
+      if(picked){ price = picked.price; approx = !!picked.approx; }
+    }
+    const dist = haversine(userLoc.lat, userLoc.lng, f.lat, f.lng);
+    return {
+      country:f.country, name:f.name, addr:f.addr, lat:f.lat, lng:f.lng,
+      stationId:f.stationId, raw, price, currency, approx, dist
+    };
+  }
+
+  const favView = document.getElementById("favView");
+
+  function renderFavoritesView(){
+    if(!favorites.length){
+      favView.innerHTML = `<div class="empty"><b>Sin favoritos todavía</b>Abre el detalle de una gasolinera y pulsa la estrella para guardarla aquí.</div>`;
+      favRenderedList = [];
+      return;
+    }
+    let items = favorites.map(buildFavoriteDisplayItem);
+    items.sort((a,b)=>{
+      if(sortMode === "distance") return a.dist - b.dist;
+      if(a.price == null && b.price == null) return 0;
+      if(a.price == null) return 1;
+      if(b.price == null) return -1;
+      return a.price - b.price;
+    });
+    favRenderedList = items;
+
+    favView.innerHTML = items.map((r,i)=>`
+      <div class="card" data-idx="${i}">
+        <div class="rank">⭐</div>
+        <div class="info">
+          <div class="name">${r.name}</div>
+          <div class="addr">${r.addr}</div>
+          <div class="tags">
+            <span class="badge ${r.country === 'ES' ? 'es' : 'gi'}">${countryBadge(r.country)}</span>
+            <span class="badge dist">${r.dist.toFixed(1)} km</span>
+          </div>
+        </div>
+        <div class="price">${r.price != null ? fmtPrice(r.price) + (r.approx ? '≈' : '') : '<span style="color:var(--ink-faint);font-size:13px;">—</span>'}${r.price != null ? `<small>${r.currency}/L</small>` : ''}</div>
+        <button class="navbtn" type="button" data-idx="${i}" aria-label="Cómo llegar">🧭</button>
+      </div>
+    `).join("");
+  }
+
+  favView.addEventListener("click", (e)=>{
+    const navBtn = e.target.closest(".navbtn");
+    if(navBtn){
+      e.stopPropagation();
+      const r = favRenderedList[parseInt(navBtn.dataset.idx, 10)];
+      if(r) openNav(r.lat, r.lng);
+      return;
+    }
+    const card = e.target.closest(".card");
+    if(card){
+      const r = favRenderedList[parseInt(card.dataset.idx, 10)];
+      if(r) showDetail(r);
+    }
+  });
+
+  /* ============ MODAL DE DETALLE ============ */
+
+  const detailOverlay = document.getElementById("detailOverlay");
+  const detailSheet = document.getElementById("detailSheet");
+
+  function closeDetail(){ detailOverlay.classList.remove("open"); }
+  detailOverlay.addEventListener("click", (e)=>{ if(e.target === detailOverlay) closeDetail(); });
+
+  function fuelRowsHtml(item){
+    return FUELS.map(f=>{
+      let priceHtml = '<span style="color:var(--ink-faint)">—</span>';
+      if(item.country === "ES" && item.raw){
+        const p = parseEsNumber(item.raw[f.esKey]);
+        if(p !== null) priceHtml = fmtPrice(p) + " €";
+      } else if(item.country === "GI" && item.stationId){
+        const picked = pickGiPrice(item.stationId, f.giCode);
+        if(picked){
+          priceHtml = fmtPrice(picked.price) + " €";
+          if(picked.gbpPrice) priceHtml += `<small>≈ £${fmtPrice(picked.gbpPrice)}</small>`;
+          else if(picked.approx) priceHtml += `<small>convertido desde £</small>`;
+        }
+      }
+      const isSel = f.id === selectedFuel.id;
+      return `<div class="fuel-row${isSel ? ' selected' : ''}"><span class="fname">${f.label} <span style="opacity:.6">${f.sub}</span></span><span class="fprice">${priceHtml}</span></div>`;
+    }).join("");
+  }
+
+  function showDetail(item){
+    if(!item) return;
+    const countryLabel = item.country === "ES" ? "ESPAÑA" : "GIBRALTAR";
+    const badgeClass = item.country === "ES" ? "es" : "gi";
+    const fav = isFavorite(item);
+    detailSheet.innerHTML = `
+      <button class="modal-fav${fav ? ' active' : ''}" type="button" id="detailFavBtn" aria-label="Favorito">${fav ? '★' : '☆'}</button>
+      <button class="modal-close" type="button" id="detailCloseBtn">✕</button>
+      <div class="modal-handle"></div>
+      <div class="modal-title">${item.name}</div>
+      <div class="modal-addr">${item.addr || ""}</div>
+      <div class="modal-badges">
+        <span class="badge ${badgeClass}">${countryFlag(item.country)}${countryLabel}</span>
+        <span class="badge dist">${item.dist.toFixed(1)} km</span>
+      </div>
+      ${item.horario ? `<div class="modal-info-line">🕒 <b>${item.horario}</b></div>` : ""}
+      ${item.approx ? `<div class="modal-info-line">ℹ️ Precio convertido desde libras a un cambio aproximado.</div>` : ""}
+      <div class="modal-section-title">Precios por combustible</div>
+      ${fuelRowsHtml(item)}
+      ${historySectionHtml(item)}
+      <button class="modal-nav" type="button" id="detailNavBtn">🧭 Cómo llegar</button>
+    `;
+    detailOverlay.classList.add("open");
+    document.getElementById("detailCloseBtn").onclick = closeDetail;
+    document.getElementById("detailNavBtn").onclick = ()=> openNav(item.lat, item.lng);
+    document.getElementById("detailFavBtn").onclick = (e)=>{
+      const nowFav = toggleFavorite(item);
+      e.currentTarget.textContent = nowFav ? "★" : "☆";
+      e.currentTarget.classList.toggle("active", nowFav);
+    };
+  }
+
+  /* ============ INICIALIZACIÓN: aplicar preferencias guardadas ============ */
+
+  setTheme(storageGet("theme", "dark"));
+
+  document.getElementById("countryEsCheck").checked = !hiddenCountries.has("ES");
+  document.getElementById("countryGiCheck").checked = !hiddenCountries.has("GI");
+
+  if(sortMode !== "price"){
+    document.querySelectorAll("#sortToggle button").forEach(b=> b.classList.toggle("active", b.dataset.sort === sortMode));
+  }
+  const savedRadius = storageGet("radius", null);
+  if(savedRadius) radiusInput.value = savedRadius;
+
+  if(savedManualLoc){
+    document.getElementById("latInput").value = userLoc.lat.toFixed(5);
+    document.getElementById("lngInput").value = userLoc.lng.toFixed(5);
+    geoStatus.textContent = "Usando tu última ubicación guardada · toca el botón para actualizarla por GPS";
+  }
+
+  const savedMapStyle = storageGet("mapStyle", null);
+  if(savedMapStyle && MAP_STYLES[savedMapStyle]){
+    mapStyle = savedMapStyle;
+    document.querySelectorAll("#mapStyleSeg button").forEach(b=> b.classList.toggle("active", b.dataset.style === savedMapStyle));
+  }
+
+  if(allBrands.size) renderBrandFilterList();
+
+})();
+</script>
+</body>
+</html>
